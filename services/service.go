@@ -84,12 +84,14 @@ func (s *Service) RollDice(update tgbotapi.Update) {
 				case domain.Advantage:
 					advantageCount += 1
 				case domain.Triumph:
+					successCount += 1
 					triumphCount += 1
 				case domain.Failure:
 					failureCount += 1
 				case domain.Complication:
 					complicationCount += 1
 				case domain.Crash:
+					failureCount += 1
 					crashCount += 1
 				}
 			}
@@ -97,19 +99,36 @@ func (s *Service) RollDice(update tgbotapi.Update) {
 	}
 
 	response := strings.Builder{}
-	response.WriteString("Бросок кости бонуса: \n")
-	response.WriteString(fmt.Sprintf("Успех: %d", successCount))
+	response.WriteString("Результат броска: \n")
+
+	var resultString string
+	result := successCount - failureCount
+	if result <= 0 {
+		resultString = "Неудача"
+	} else {
+		resultString = "Успех"
+	}
+	response.WriteString(fmt.Sprintf("Успех: %s", resultString))
 	response.WriteString("\n")
-	response.WriteString(fmt.Sprintf("Преимущество: %d", advantageCount))
-	response.WriteString("\n")
-	response.WriteString(fmt.Sprintf("Триумф: %d", triumphCount))
-	response.WriteString("\n")
-	response.WriteString(fmt.Sprintf("Неудача: %d", failureCount))
-	response.WriteString("\n")
-	response.WriteString(fmt.Sprintf("Осложнение: %d", complicationCount))
-	response.WriteString("\n")
-	response.WriteString(fmt.Sprintf("Крах: %d", crashCount))
-	response.WriteString("\n")
+
+	advantageScore := advantageCount - complicationCount
+	if advantageScore < 0 {
+		response.WriteString(fmt.Sprintf("Осложнение: %d", -advantageScore))
+		response.WriteString("\n")
+	} else if advantageScore > 0 {
+		response.WriteString(fmt.Sprintf("Преимущество: %d", advantageScore))
+		response.WriteString("\n")
+	}
+
+	if triumphCount > 0 {
+		response.WriteString(fmt.Sprintf("Триумф: %d", triumphCount))
+		response.WriteString("\n")
+	}
+
+	if crashCount > 0 {
+		response.WriteString(fmt.Sprintf("Крах: %d", crashCount))
+		response.WriteString("\n")
+	}
 
 	msg := tgbotapi.NewMessage(update.Message.Chat.ID, response.String())
 	s.bot.Send(msg)
