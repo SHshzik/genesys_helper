@@ -2,7 +2,6 @@ package services
 
 import (
 	"fmt"
-	"log"
 	"math/rand"
 	"regexp"
 	"slices"
@@ -52,13 +51,13 @@ func (s *Service) RollDice(update tgbotapi.Update) {
 		switch token.Letter {
 		case domain.BonusDiceLetter:
 			dice = domain.BonusDice
+		case domain.AbilityDiceLetter:
+			dice = domain.AbilityDice
 		}
 
 		for i := 0; i < token.Count; i++ {
 			random := rand.Intn(6) + 1
-			log.Println(random)
 			values := dice[random]
-			log.Println(values)
 			for _, value := range values {
 				switch value {
 				case domain.Success:
