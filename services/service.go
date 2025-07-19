@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/SHshzik/genesys_helper/adapters/sqlite_adapter"
 	"github.com/SHshzik/genesys_helper/domain"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
@@ -17,21 +18,22 @@ const (
 )
 
 type Service struct {
-	bot *tgbotapi.BotAPI
+	bot           *tgbotapi.BotAPI
+	sqliteAdapter *sqlite_adapter.SqliteAdapter
 }
 
-func NewService(bot *tgbotapi.BotAPI) *Service {
-	return &Service{bot: bot}
+func NewService(bot *tgbotapi.BotAPI, sqliteAdapter *sqlite_adapter.SqliteAdapter) *Service {
+	return &Service{bot: bot, sqliteAdapter: sqliteAdapter}
 }
 
-func (s *Service) Start(update tgbotapi.Update) {
-	msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Привет, я Genesys Helper!")
-	msg.ReplyToMessageID = update.Message.MessageID
+func (s *Service) Start(message domain.TelegramMessage) {
+	msg := tgbotapi.NewMessage(message.User.ID, "Привет, я Genesys Helper!")
+	msg.ReplyToMessageID = message.ID
 
 	s.bot.Send(msg)
 }
 
-func (s *Service) RollDice(update tgbotapi.Update) {
+func (s *Service) RollDice(message domain.TelegramMessage) {
 	var successCount int
 	var advantageCount int
 	var triumphCount int
@@ -39,12 +41,12 @@ func (s *Service) RollDice(update tgbotapi.Update) {
 	var complicationCount int
 	var crashCount int
 
-	parts := strings.Split(update.Message.Text, diceRollCommandDelimiter)
+	parts := strings.Split(message.Text, diceRollCommandDelimiter)
 	diceCommand := parts[1]
 	dices := splitByPattern(diceCommand)
 	tokens, err := parseTokens(dices)
 	if err != nil {
-		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Неизвестный кубик")
+		msg := tgbotapi.NewMessage(message.User.ID, "Неизвестный кубик")
 		s.bot.Send(msg)
 
 		return
@@ -130,7 +132,7 @@ func (s *Service) RollDice(update tgbotapi.Update) {
 		response.WriteString("\n")
 	}
 
-	msg := tgbotapi.NewMessage(update.Message.Chat.ID, response.String())
+	msg := tgbotapi.NewMessage(message.Chat.ID, response.String())
 	s.bot.Send(msg)
 }
 
@@ -170,4 +172,36 @@ func parseTokens(parts []string) ([]domain.Token, error) {
 		tokens = append(tokens, domain.Token{Count: count, Letter: letter})
 	}
 	return tokens, nil
+}
+
+func (s *Service) ListCharacters(message domain.TelegramMessage) {
+	user, err := s.GetOrCreateUser(message.User)
+	if err != nil {
+		msg := tgbotapi.NewMessage(message.User.ID, "Ошибка при получении пользователя")
+		s.bot.Send(msg)
+		return
+	}
+
+	fmt.Println(user)
+
+	msg := tgbotapi.NewMessage(message.Chat.ID, fmt.Sprintf("Лист персонажей %s", user.FirstName))
+	s.bot.Send(msg)
+}
+
+func (s *Service) GetOrCreateUser(telegramUser domain.TelegramUser) (domain.User, error) {
+	user, err := s.sqliteAdapter.GetUserByID(telegramUser.ID)
+	if err != nil {
+		user = domain.User{
+			ID:        telegramUser.ID,
+			FirstName: telegramUser.FirstName,
+			LastName:  telegramUser.LastName,
+			UserName:  telegramUser.UserName,
+		}
+		err = s.sqliteAdapter.CreateUser(&user)
+		if err != nil {
+			return domain.User{}, err
+		}
+	}
+
+	return user, nil
 }
