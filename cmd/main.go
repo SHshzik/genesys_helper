@@ -2,8 +2,13 @@ package main
 
 import (
 	"log"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/SHshzik/genesys_helper/config"
+	"github.com/SHshzik/genesys_helper/handlers"
+	"github.com/SHshzik/genesys_helper/services"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
@@ -25,16 +30,15 @@ func main() {
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
 
-	updates := bot.GetUpdatesChan(u)
+	service := services.NewService(bot)
 
-	for update := range updates {
-		if update.Message != nil { // If we got a message
-			log.Printf("[%s] %s", update.Message.From.UserName, update.Message.Text)
+	botHandler := handlers.NewBot(bot, u, service)
 
-			msg := tgbotapi.NewMessage(update.Message.Chat.ID, update.Message.Text)
-			msg.ReplyToMessageID = update.Message.MessageID
+	go botHandler.Listen()
 
-			bot.Send(msg)
-		}
-	}
+	// Waiting signal
+	interrupt := make(chan os.Signal, 1)
+	signal.Notify(interrupt, os.Interrupt, syscall.SIGTERM)
+	s := <-interrupt
+	log.Printf("app - Run - signal: " + s.String())
 }
