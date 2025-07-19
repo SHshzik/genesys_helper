@@ -34,6 +34,7 @@ func (s *Service) Start(update tgbotapi.Update) {
 func (s *Service) RollDice(update tgbotapi.Update) {
 	var successCount int
 	var advantageCount int
+	var triumphCount int
 
 	parts := strings.Split(update.Message.Text, diceRollCommandDelimiter)
 	diceCommand := parts[1]
@@ -48,15 +49,21 @@ func (s *Service) RollDice(update tgbotapi.Update) {
 
 	for _, token := range tokens {
 		var dice domain.Dice
+		var count int
 		switch token.Letter {
 		case domain.BonusDiceLetter:
+			count = 6
 			dice = domain.BonusDice
 		case domain.AbilityDiceLetter:
+			count = 8
 			dice = domain.AbilityDice
+		case domain.MasterDiceLetter:
+			count = 12
+			dice = domain.MasterDice
 		}
 
 		for i := 0; i < token.Count; i++ {
-			random := rand.Intn(6) + 1
+			random := rand.Intn(count) + 1
 			values := dice[random]
 			for _, value := range values {
 				switch value {
@@ -64,6 +71,8 @@ func (s *Service) RollDice(update tgbotapi.Update) {
 					successCount += 1
 				case domain.Advantage:
 					advantageCount += 1
+				case domain.Triumph:
+					triumphCount += 1
 				}
 			}
 		}
@@ -74,6 +83,8 @@ func (s *Service) RollDice(update tgbotapi.Update) {
 	response.WriteString(fmt.Sprintf("Успех: %d", successCount))
 	response.WriteString("\n")
 	response.WriteString(fmt.Sprintf("Преимущество: %d", advantageCount))
+	response.WriteString("\n")
+	response.WriteString(fmt.Sprintf("Триумф: %d", triumphCount))
 	response.WriteString("\n")
 
 	msg := tgbotapi.NewMessage(update.Message.Chat.ID, response.String())
