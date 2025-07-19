@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"strings"
+
 	"github.com/SHshzik/genesys_helper/services"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
@@ -19,13 +21,19 @@ func (b *Bot) Listen() {
 	updates := b.bot.GetUpdatesChan(b.uConfig)
 
 	for update := range updates {
-		switch update.Message.Text {
-		case "start", "старт":
+		switch {
+		case update.Message.Text == "start" || update.Message.Text == "старт":
 			b.Start(update)
+		case strings.HasPrefix(update.Message.Text, "G:"):
+			b.RollDice(update)
 		}
 	}
 }
 
 func (b *Bot) Start(update tgbotapi.Update) {
 	b.service.Start(update)
+}
+
+func (b *Bot) RollDice(update tgbotapi.Update) {
+	b.service.RollDice(update)
 }
