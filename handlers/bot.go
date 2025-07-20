@@ -30,6 +30,8 @@ func (b *Bot) Listen() {
 			b.RollDice(message)
 		case message.Text == "/character":
 			b.CharacterInfo(message)
+		case message.Text == "/info":
+			b.Info(message)
 		}
 	}
 }
@@ -44,4 +46,8 @@ func (b *Bot) RollDice(message domain.TelegramMessage) {
 
 func (b *Bot) CharacterInfo(message domain.TelegramMessage) {
 	b.service.CharacterInfo(message)
+}
+
+func (b *Bot) Info(message domain.TelegramMessage) {
+	b.service.Info(message)
 }
