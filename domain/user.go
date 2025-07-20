@@ -10,5 +10,4 @@ type User struct {
 type Character struct {
 	ID   int64
 	Name string
-	User User
 }

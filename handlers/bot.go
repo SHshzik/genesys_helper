@@ -24,12 +24,12 @@ func (b *Bot) Listen() {
 	for update := range updates {
 		message := domain.ToDomainMessage(update)
 		switch {
-		case message.Text == "start" || message.Text == "старт":
+		case message.Text == "/start":
 			b.Start(message)
-		case strings.HasPrefix(message.Text, "G:"):
+		case strings.HasPrefix(message.Text, "/roll"):
 			b.RollDice(message)
-		case message.Text == "лист персонажей":
-			b.ListCharacters(message)
+		case message.Text == "/character":
+			b.CharacterInfo(message)
 		}
 	}
 }
@@ -42,6 +42,6 @@ func (b *Bot) RollDice(message domain.TelegramMessage) {
 	b.service.RollDice(message)
 }
 
-func (b *Bot) ListCharacters(message domain.TelegramMessage) {
-	b.service.ListCharacters(message)
+func (b *Bot) CharacterInfo(message domain.TelegramMessage) {
+	b.service.CharacterInfo(message)
 }

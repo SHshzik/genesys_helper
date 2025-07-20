@@ -2,7 +2,7 @@ package queries
 
 import sq "github.com/Masterminds/squirrel"
 
-func GetUserByIDSQL(id int64) (string, []interface{}, error) {
+func FindUserByIDSQL(id int64) (string, []interface{}, error) {
 	query := sq.Select("id", "first_name", "last_name", "user_name").
 		From("users").
 		Where(sq.Eq{"id": id})
@@ -15,6 +15,14 @@ func CreateUserSQL(id int64, firstName string, lastName string, userName string)
 		Columns("id", "first_name", "last_name", "user_name").
 		Values(id, firstName, lastName, userName).
 		Suffix("RETURNING id")
+
+	return query.ToSql()
+}
+
+func FindCharacterByUserIDSQL(id int64) (string, []interface{}, error) {
+	query := sq.Select("id", "name").
+		From("characters").
+		Where(sq.Eq{"user_id": id})
 
 	return query.ToSql()
 }
