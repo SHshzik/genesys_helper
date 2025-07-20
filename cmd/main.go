@@ -10,6 +10,7 @@ import (
 	"github.com/SHshzik/genesys_helper/adapters/sqlite_adapter"
 	"github.com/SHshzik/genesys_helper/config"
 	"github.com/SHshzik/genesys_helper/handlers"
+	"github.com/SHshzik/genesys_helper/pkg/logger"
 	"github.com/SHshzik/genesys_helper/services"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	_ "github.com/mattn/go-sqlite3"
@@ -21,12 +22,14 @@ func main() {
 		log.Panic(err)
 	}
 
+	l := logger.New(config.Log.Level)
+
 	db, err := sql.Open("sqlite3", "file:genesys_helper.db?cache=shared&mode=rwc")
 	if err != nil {
 		log.Panic(err)
 	}
 
-	sqlite := sqlite_adapter.NewSqliteAdapter(db)
+	sqlite := sqlite_adapter.NewSqliteAdapter(db, l)
 
 	bot, err := tgbotapi.NewBotAPI(config.TelegramBout.Token)
 	if err != nil {
@@ -40,9 +43,9 @@ func main() {
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
 
-	service := services.NewService(bot, sqlite)
+	service := services.NewService(bot, sqlite, l)
 
-	botHandler := handlers.NewBot(bot, u, service)
+	botHandler := handlers.NewBot(bot, u, service, l)
 
 	go botHandler.Listen()
 

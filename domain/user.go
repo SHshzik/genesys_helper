@@ -8,6 +8,7 @@ type User struct {
 }
 
 type Character struct {
-	ID   int64
-	Name string
+	ID     int64
+	Name   string
+	UserID int64
 }

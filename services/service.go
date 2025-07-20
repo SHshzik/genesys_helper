@@ -8,6 +8,7 @@ import (
 
 	"github.com/SHshzik/genesys_helper/adapters/sqlite_adapter"
 	"github.com/SHshzik/genesys_helper/domain"
+	"github.com/SHshzik/genesys_helper/pkg/logger"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
@@ -18,10 +19,11 @@ const (
 type Service struct {
 	bot           *tgbotapi.BotAPI
 	sqliteAdapter *sqlite_adapter.SqliteAdapter
+	l             logger.Interface
 }
 
-func NewService(bot *tgbotapi.BotAPI, sqliteAdapter *sqlite_adapter.SqliteAdapter) *Service {
-	return &Service{bot: bot, sqliteAdapter: sqliteAdapter}
+func NewService(bot *tgbotapi.BotAPI, sqliteAdapter *sqlite_adapter.SqliteAdapter, l logger.Interface) *Service {
+	return &Service{bot: bot, sqliteAdapter: sqliteAdapter, l: l}
 }
 
 func (s *Service) Start(message domain.TelegramMessage) {
@@ -84,4 +86,19 @@ func (s *Service) GetOrCreateUser(telegramUser domain.TelegramUser) (domain.User
 	}
 
 	return user, nil
+}
+
+func (s *Service) GetOrCreateCharacter(telegramUser domain.TelegramUser) (domain.Character, error) {
+	character, err := s.sqliteAdapter.GetCharacterByUserID(telegramUser.ID)
+	if err != nil {
+		character = domain.Character{
+			UserID: telegramUser.ID,
+		}
+		err = s.sqliteAdapter.CreateCharacter(&character)
+		if err != nil {
+			return domain.Character{}, err
+		}
+	}
+
+	return character, nil
 }

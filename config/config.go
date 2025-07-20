@@ -10,12 +10,17 @@ type (
 	// Config -.
 	Config struct {
 		TelegramBout TelegramBot
+		Log          Log
 	}
 
 	// App -.
 	TelegramBot struct {
 		Token string `env:"TELEGRAM_BOT_TOKEN,required"`
 		Debug bool   `env:"TELEGRAM_BOT_DEBUG,required"`
+	}
+
+	Log struct {
+		Level string `env:"LOG_LEVEL,required"`
 	}
 )
 
